@@ -3,264 +3,207 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NZ Cognitive Assessment Practice - Mini-ACE</title>
+    <title>NZ Mini-ACE - High Variability Mode</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f5;
+            color: #1c1e21;
             display: flex;
             justify-content: center;
             align-items: center;
+            min-height: 100vh;
+            padding: 20px;
         }
-        body.large-text { font-size: 18px; }
-        body.large-text h1 { font-size: 36px; }
-        body.large-text button { font-size: 18px; padding: 18px 30px; }
         .container {
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            max-width: 800px;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            max-width: 500px;
             width: 100%;
-            padding: 40px;
         }
-        .header { text-align: center; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; }
-        .header-controls { display: flex; gap: 10px; }
-        .toggle-btn { padding: 8px 14px; background: #e0e0e0; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
-        .toggle-btn.active { background: #667eea; color: white; }
         .screen { display: none; }
-        .screen.active { display: block; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .progress-bar { width: 100%; height: 8px; background: #e0e0e0; border-radius: 4px; margin: 20px 0; overflow: hidden; }
-        .progress-fill { height: 100%; background: #667eea; transition: width 0.3s; width: 0%; }
-        .test-content { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-        .instruction { background: #e3f2fd; border-left: 4px solid #2196F3; padding: 15px; margin-bottom: 15px; color: #1565c0; border-radius: 4px; }
-        .choice-btn { display: block; width: 100%; padding: 15px; margin: 10px 0; text-align: left; border: 2px solid #e0e0e0; background: white; border-radius: 8px; cursor: pointer; font-size: 16px; transition: 0.2s; }
-        .choice-btn:hover { border-color: #667eea; background: #f0f4ff; }
-        .btn-primary { background: #667eea; color: white; padding: 15px 25px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; width: 100%; }
-        .score-item { background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center; border-left: 4px solid #667eea; margin-bottom: 10px; }
-        .countdown-timer { font-size: 24px; color: #d32f2f; font-weight: bold; text-align: center; margin: 10px 0; }
-        .drawing-ref { border: 1px dashed #ccc; padding: 10px; margin-top: 10px; background: #fff; text-align: center; }
+        .screen.active { display: block; }
+        .btn-primary {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            width: 100%;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .choice-btn {
+            background: #f8f9fa;
+            border: 2px solid #e4e6eb;
+            padding: 12px;
+            border-radius: 8px;
+            width: 100%;
+            text-align: left;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .choice-btn:hover { background: #e7f3ff; border-color: #007bff; }
+        .instruction { background: #fff3cd; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 0.9em; color: #856404; }
+        .progress-bar { height: 6px; background: #eee; border-radius: 3px; margin-bottom: 20px; overflow: hidden; }
+        .progress-fill { height: 100%; background: #28a745; width: 0%; transition: width 0.4s; }
+        .timer { font-size: 2rem; font-weight: bold; text-align: center; color: #dc3545; margin: 10px 0; }
+        .score-card { border-bottom: 1px solid #eee; padding: 10px 0; display: flex; justify-content: space-between; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🧠 Mini-ACE</h1>
-            <div class="header-controls">
-                <button class="toggle-btn" id="audioBtn" onclick="toggleAudio()">🔊</button>
-                <button class="toggle-btn" id="textBtn" onclick="toggleTextSize()">A+</button>
-            </div>
-        </div>
 
-        <div id="welcomeScreen" class="screen active">
-            <p>This is a practice tool for the NZ Older Driver cognitive assessment. It takes about 5 minutes.</p>
-            <button class="btn-primary" style="margin-top:20px" onclick="startTest()">Start Practice</button>
-        </div>
-
-        <div id="testScreen" class="screen">
-            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-            <div id="testContent"></div>
-            <button class="btn-primary" id="nextBtn" onclick="handleNextClick()">Next</button>
-        </div>
-
-        <div id="resultsScreen" class="screen">
-            <div style="text-align:center; margin-bottom:20px;">
-                <h2>Your Score: <span id="totalScore">0/30</span></h2>
-                <p id="interpretation"></p>
-            </div>
-            <div id="scoreBreakdown"></div>
-            <button class="btn-primary" onclick="location.reload()">Restart</button>
-        </div>
+<div class="container">
+    <div id="welcome" class="screen active">
+        <h1>Mini-ACE Practice</h1>
+        <p>This version uses randomized pools. Each attempt will be different.</p>
+        <button class="btn-primary" onclick="initTest()">Start Random Test</button>
     </div>
 
-    <script>
-        let audioEnabled = false;
-        let timerInterval;
-        const test = {
-            currentSection: 0,
-            sections: [
-                {id: 'attention', name: 'Attention', maxScore: 4, userScore: 0},
-                {id: 'memory-immediate', name: 'Memory - Immediate', maxScore: 3, userScore: 0},
-                {id: 'fluency', name: 'Fluency', maxScore: 7, userScore: 0},
-                {id: 'visuospatial', name: 'Visuospatial', maxScore: 6, userScore: 0},
-                {id: 'language', name: 'Language', maxScore: 6, userScore: 0},
-                {id: 'memory-delayed', name: 'Memory - Delayed', maxScore: 4, userScore: 0}
-            ],
-            attentionStep: 0,
-            memoryWords: ['Apple', 'Table', 'Penny'],
-            namingIndex: 0
-        };
+    <div id="testArea" class="screen">
+        <div class="progress-bar"><div class="progress-fill" id="bar"></div></div>
+        <div id="content"></div>
+        <button id="nextBtn" class="btn-primary" style="display:none" onclick="processNext()">Next</button>
+    </div>
 
-        function toggleAudio() { audioEnabled = !audioEnabled; document.getElementById('audioBtn').classList.toggle('active'); }
-        function toggleTextSize() { document.body.classList.toggle('large-text'); document.getElementById('textBtn').classList.toggle('active'); }
-        function speak(t) { if(audioEnabled) { window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.rate = 0.9; window.speechSynthesis.speak(u); } }
+    <div id="results" class="screen">
+        <h2>Practice Summary</h2>
+        <h1 id="total" style="text-align:center; padding: 20px;"></h1>
+        <div id="breakdown"></div>
+        <button class="btn-primary" onclick="location.reload()">New Random Test</button>
+    </div>
+</div>
+
+<script>
+    // POOLS FOR VARIABILITY
+    const memoryPools = [
+        ['Apple', 'Table', 'Penny'],
+        ['Lemon', 'Key', 'Balloon'],
+        ['River', 'Shirt', 'Mirror'],
+        ['Finger', 'Orchard', 'Anchor']
+    ];
+
+    const languagePools = [
+        { q: "Repeat: 'No ifs, ands, or buts'", options: ["No ifs, ands, or buts", "No if and but", "No ifs or buts"] },
+        { q: "Which tool is for measuring temperature?", options: ["Thermometer", "Barometer", "Stethoscope"] },
+        { q: "What is the name of a long-necked animal?", options: ["Giraffe", "Ostrich", "Elephant"] }
+    ];
+
+    let state = {
+        section: 0,
+        subStep: 0,
+        score: 0,
+        words: [],
+        sections: ['Attention', 'Immediate Memory', 'Fluency', 'Visuospatial', 'Language', 'Delayed Memory'],
+        scores: [0,0,0,0,0,0]
+    };
+
+    function initTest() {
+        state.words = memoryPools[Math.floor(Math.random() * memoryPools.length)];
+        switchScreen('testArea');
+        render();
+    }
+
+    function switchScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    function render() {
+        const content = document.getElementById('content');
+        const nextBtn = document.getElementById('nextBtn');
+        document.getElementById('bar').style.width = (state.section / 5 * 100) + '%';
+        nextBtn.style.display = "none";
         
-        function shuffleArray(arr) {
-            for(let i = arr.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [arr[i], arr[j]] = [arr[j], arr[i]];
-            }
-            return arr;
-        }
+        let html = `<h3>${state.sections[state.section]}</h3>`;
 
-        function startTest() {
-            test.currentSection = 0;
-            showSection();
-        }
+        switch(state.section) {
+            case 0: // Attention
+                let nums = Array.from({length: state.subStep + 3}, () => Math.floor(Math.random() * 9) + 1);
+                html += `<div class='instruction'>Remember these numbers:</div><h2 style='text-align:center; letter-spacing:10px;'>${nums.join('')}</h2>`;
+                setTimeout(() => {
+                    content.innerHTML = `<h3>Attention</h3><p>Which sequence was it?</p>` + 
+                        shuffle([{t: nums.join(', '), c:true}, {t: nums.reverse().join(', '), c:false}])
+                        .map(b => `<button class="choice-btn" onclick="handleInput(${b.c})">${b.t}</button>`).join('');
+                }, 2500);
+                break;
 
-        function showSection() {
-            clearInterval(timerInterval);
-            const section = test.sections[test.currentSection];
-            document.getElementById('progressFill').style.width = (test.currentSection / test.sections.length * 100) + '%';
-            document.getElementById('nextBtn').style.display = (['attention', 'language', 'memory-immediate', 'memory-delayed'].includes(section.id)) ? 'none' : 'block';
-            
-            let html = `<h3>${section.name}</h3>`;
-            
-            if(section.id === 'attention') html += renderAttention();
-            if(section.id === 'memory-immediate') html += renderMemory(true);
-            if(section.id === 'fluency') { html += renderFluency(); startFluencyTimer(); }
-            if(section.id === 'visuospatial') html += renderVisuospatial();
-            if(section.id === 'language') html += renderLanguage();
-            if(section.id === 'memory-delayed') html += renderMemory(false);
+            case 1: // Immediate Memory
+                html += `<div class='instruction'>Memorize these 3 words:</div><h2 style='text-align:center;'>${state.words.join(' - ')}</h2>`;
+                nextBtn.style.display = "block";
+                nextBtn.innerText = "I have memorized them";
+                break;
 
-            document.getElementById('testContent').innerHTML = html;
-            document.getElementById('testScreen').classList.add('active');
-            document.getElementById('welcomeScreen').classList.remove('active');
-        }
+            case 2: // Fluency
+                html += `<div class='instruction'>Type as many words as you can starting with 'F'.</div><div class="timer" id="t">60</div><textarea id="fluency" style="width:100%;height:100px;"></textarea>`;
+                nextBtn.style.display = "block";
+                startTimer();
+                break;
 
-        function renderAttention() {
-            const seqs = [[3,7], [4,2,9], [1,8,5,3], [6,2,7,4,9]];
-            const current = seqs[test.attentionStep];
-            const correct = current.join(', ');
-            const reversed = [...current].reverse().join(', ');
-            const options = shuffleArray([
-                {text: correct, correct: true},
-                {text: reversed, correct: false}
-            ]);
-            
-            speak("Remember these numbers: " + current.join(' '));
-            setTimeout(() => {
-                document.getElementById('seqBox').innerHTML = `<p>Select the sequence you saw:</p>`;
-                document.getElementById('attnOptions').style.display = 'block';
-            }, 3000);
-            
-            return `<div class="test-content" id="seqBox"><div class="instruction">Remember this sequence:</div><h1 style="text-align:center; letter-spacing:10px;">${current.join('')}</h1></div>
-                    <div id="attnOptions" style="display:none">
-                        ${options.map(o => `<button class="choice-btn" onclick="scoreAttention(${o.correct})">${o.text}</button>`).join('')}
-                    </div>`;
-        }
+            case 3: // Visuospatial
+                html += `<div class='instruction'>Draw a clock at 10 past 11.</div><p>Self-rate your drawing:</p>` + 
+                    [6,4,2,0].map(v => `<button class="choice-btn" onclick="handleInput(${v})">${v}/6 Points</button>`).join('');
+                break;
 
-        function renderMemory(immediate) {
-            const prompt = immediate ? "Remember these words for later:" : "Recall the words from earlier:";
-            speak(prompt + test.memoryWords.join(' '));
-            
-            const correct = test.memoryWords.join(', ');
-            const wrong = ['Apple', 'Chair', 'Penny'].join(', ');
-            const options = shuffleArray([
-                {text: correct, correct: true},
-                {text: wrong, correct: false}
-            ]);
-            
-            return `<div class="test-content"><div class="instruction">${prompt}</div>
-                    ${immediate ? `<h2 style="text-align:center">${test.memoryWords.join(' - ')}</h2>` : ''}
-                    <p style="margin-top:10px">Which set is correct?</p>
-                    ${options.map(o => `<button class="choice-btn" onclick="scoreMemory(${o.correct}, ${immediate})">${o.text}</button>`).join('')}
-                    </div>`;
-        }
+            case 4: // Language
+                let item = languagePools[state.subStep];
+                html += `<p style='margin:15px 0;'>${item.q}</p>` + 
+                    shuffle(item.options.map((o, i) => ({t: o, c: i === 0})))
+                    .map(b => `<button class="choice-btn" onclick="handleInput(${b.c})">${b.t}</button>`).join('');
+                break;
 
-        function renderFluency() {
-            return `<div class="test-content"><div class="instruction">Type as many words as you can starting with the letter 'P'.</div>
-                    <div class="countdown-timer" id="timer">60s</div>
-                    <textarea id="fluencyInput" style="width:100%; height:100px; padding:10px;" placeholder="Type words here..."></textarea></div>`;
+            case 5: // Delayed Memory
+                html += `<p>What were the 3 words from earlier?</p>` + 
+                    shuffle([{t: state.words.join(', '), c:true}, {t: "Apple, Pen, Table", c:false}, {t: "Lemon, Key, Penny", c:false}])
+                    .map(b => `<button class="choice-btn" onclick="handleInput(${b.c})">${b.t}</button>`).join('');
+                break;
         }
+        content.innerHTML = html;
+    }
 
-        function renderVisuospatial() {
-            return `<div class="test-content"><div class="instruction">On a piece of paper, draw a Clock showing 11:10 and a Cube.</div>
-                    <div class="drawing-ref"><strong>Reference:</strong><br>Clock: Circle, all numbers, hands at 11 and 2.<br>Cube: 12 lines, 3D perspective.</div>
-                    <p>Rate your drawing (0-6 total points):</p>
-                    <input type="number" id="vScore" min="0" max="6" value="6" style="padding:10px; width:100px;"></div>`;
-        }
+    function handleInput(val) {
+        if (state.section === 0) { if(val) state.scores[0]++; state.subStep++; if(state.subStep > 3) { state.section++; state.subStep=0; } }
+        else if (state.section === 3) { state.scores[3] = val; state.section++; }
+        else if (state.section === 4) { if(val) state.scores[4] += 2; state.subStep++; if(state.subStep > 2) { state.section++; } }
+        else if (state.section === 5) { if(val) state.scores[5] = 4; state.section++; }
+        
+        if(state.section > 5) finish(); else render();
+    }
 
-        function renderLanguage() {
-            const qs = [
-                {q: "Repeat: 'No ifs, ands, or buts'", correct: "No ifs, ands, or buts", options: ["No ifs, ands, or buts", "No if and but"]},
-                {q: "What is a device for telling time?", correct: "Clock", options: ["Clock", "Altimeter"]},
-                {q: "What do you write with?", correct: "Pen", options: ["Pen", "Key"]}
-            ];
-            const current = qs[test.namingIndex];
-            speak(current.q);
-            
-            const shuffledOpts = shuffleArray(current.options.map((o, idx) => ({
-                text: o,
-                correct: o === current.correct
-            })));
-            
-            return `<div class="test-content"><div class="instruction">Question ${test.namingIndex + 1} of 3</div>
-                    <p style="font-size:1.2em; margin-bottom:15px;">${current.q}</p>
-                    ${shuffledOpts.map(o => `<button class="choice-btn" onclick="scoreLanguage(${o.correct})">${o.text}</button>`).join('')}
-                    </div>`;
+    function processNext() {
+        if(state.section === 1) { state.scores[1] = 3; state.section++; }
+        else if(state.section === 2) { 
+            let count = document.getElementById('fluency').value.split(/\s+/).filter(w => w.length > 1).length;
+            state.scores[2] = Math.min(count, 7);
+            state.section++; 
         }
+        render();
+    }
 
-        function scoreAttention(correct) {
-            if(correct) test.sections[0].userScore++;
-            test.attentionStep++;
-            if(test.attentionStep < 4) showSection(); else nextSection();
-        }
+    function startTimer() {
+        let s = 60;
+        let iv = setInterval(() => {
+            s--;
+            if(document.getElementById('t')) document.getElementById('t').innerText = s;
+            if(s <= 0) { clearInterval(iv); processNext(); }
+        }, 1000);
+    }
 
-        function scoreMemory(correct, immediate) {
-            let sec = immediate ? 1 : 5;
-            test.sections[sec].userScore = correct ? test.sections[sec].maxScore : 0;
-            nextSection();
-        }
+    function shuffle(arr) { return arr.sort(() => Math.random() - 0.5); }
 
-        function startFluencyTimer() {
-            let time = 60;
-            timerInterval = setInterval(() => {
-                time--;
-                document.getElementById('timer').innerText = time + 's';
-                if(time <= 0) { clearInterval(timerInterval); handleNextClick(); }
-            }, 1000);
-        }
+    function finish() {
+        switchScreen('results');
+        let total = state.scores.reduce((a,b) => a+b, 0);
+        document.getElementById('total').innerText = total + " / 30";
+        document.getElementById('breakdown').innerHTML = state.sections.map((n, i) => 
+            `<div class="score-card"><span>${n}</span><strong>${state.scores[i]}</strong></div>`).join('');
+    }
+</script>
 
-        function scoreLanguage(correct) {
-            if(correct) test.sections[4].userScore += 2;
-            test.namingIndex++;
-            if(test.namingIndex < 3) showSection(); else nextSection();
-        }
-
-        function handleNextClick() {
-            const sec = test.sections[test.currentSection];
-            if(sec.id === 'fluency') {
-                const words = document.getElementById('fluencyInput').value.split(/\s+/).filter(w => w.length > 2);
-                test.sections[2].userScore = Math.min(words.length, 7);
-            }
-            if(sec.id === 'visuospatial') {
-                test.sections[3].userScore = parseInt(document.getElementById('vScore').value);
-            }
-            nextSection();
-        }
-
-        function nextSection() {
-            test.currentSection++;
-            if(test.currentSection < test.sections.length) showSection(); else finish();
-        }
-
-        function finish() {
-            document.getElementById('testScreen').classList.remove('active');
-            document.getElementById('resultsScreen').classList.add('active');
-            let total = 0;
-            let breakdownHtml = "";
-            test.sections.forEach(s => {
-                total += s.userScore;
-                breakdownHtml += `<div class="score-item"><strong>${s.name}:</strong> ${s.userScore}/${s.maxScore}</div>`;
-            });
-            document.getElementById('totalScore').innerText = total + "/30";
-            document.getElementById('scoreBreakdown').innerHTML = breakdownHtml;
-            document.getElementById('interpretation').innerText = total >= 26 ? "Result: Normal" : "Result: Consider consulting a GP for a formal check.";
-        }
-    </script>
 </body>
 </html>
