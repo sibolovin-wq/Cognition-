@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NZ Mini-ACE - High Variability Mode</title>
+    <title>NZ Mini-ACE - Speech & Randomization</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #f0f2f5;
-            color: #1c1e21;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -46,14 +45,14 @@
             text-align: left;
             margin-bottom: 10px;
             cursor: pointer;
-            transition: all 0.2s;
         }
         .choice-btn:hover { background: #e7f3ff; border-color: #007bff; }
         .instruction { background: #fff3cd; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 0.9em; color: #856404; }
         .progress-bar { height: 6px; background: #eee; border-radius: 3px; margin-bottom: 20px; overflow: hidden; }
         .progress-fill { height: 100%; background: #28a745; width: 0%; transition: width 0.4s; }
         .timer { font-size: 2rem; font-weight: bold; text-align: center; color: #dc3545; margin: 10px 0; }
-        .score-card { border-bottom: 1px solid #eee; padding: 10px 0; display: flex; justify-content: space-between; }
+        .speech-indicator { text-align: center; color: #007bff; font-weight: bold; margin: 10px 0; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
     </style>
 </head>
 <body>
@@ -61,8 +60,8 @@
 <div class="container">
     <div id="welcome" class="screen active">
         <h1>Mini-ACE Practice</h1>
-        <p>This version uses randomized pools. Each attempt will be different.</p>
-        <button class="btn-primary" onclick="initTest()">Start Random Test</button>
+        <p>This version includes randomized phrases and <strong>Voice Synthesis</strong>. Ensure your sound is on.</p>
+        <button class="btn-primary" onclick="initTest()">Start Assessment</button>
     </div>
 
     <div id="testArea" class="screen">
@@ -72,39 +71,47 @@
     </div>
 
     <div id="results" class="screen">
-        <h2>Practice Summary</h2>
+        <h2>Results</h2>
         <h1 id="total" style="text-align:center; padding: 20px;"></h1>
         <div id="breakdown"></div>
-        <button class="btn-primary" onclick="location.reload()">New Random Test</button>
+        <button class="btn-primary" onclick="location.reload()">Try Different Quiz</button>
     </div>
 </div>
 
 <script>
-    // POOLS FOR VARIABILITY
     const memoryPools = [
-        ['Apple', 'Table', 'Penny'],
-        ['Lemon', 'Key', 'Balloon'],
-        ['River', 'Shirt', 'Mirror'],
-        ['Finger', 'Orchard', 'Anchor']
+        ['Apple', 'Table', 'Penny'], ['Lemon', 'Key', 'Balloon'],
+        ['River', 'Shirt', 'Mirror'], ['Finger', 'Orchard', 'Anchor']
     ];
 
-    const languagePools = [
-        { q: "Repeat: 'No ifs, ands, or buts'", options: ["No ifs, ands, or buts", "No if and but", "No ifs or buts"] },
-        { q: "Which tool is for measuring temperature?", options: ["Thermometer", "Barometer", "Stethoscope"] },
-        { q: "What is the name of a long-necked animal?", options: ["Giraffe", "Ostrich", "Elephant"] }
+    const phrasePool = [
+        { correct: "No ifs, ands, or buts", decoys: ["No if and but", "No ifs or buts"] },
+        { correct: "The caterpillar is a pupa", decoys: ["The caterpillar is a purple", "The caterpillar is a puppy"] },
+        { correct: "Around the rugged rocks", decoys: ["Around the ragged rocks", "About the rugged rocks"] },
+        { correct: "Methodist Episcopal", decoys: ["Methodical Episcopal", "Methodist Episcope"] }
+    ];
+
+    const namingPools = [
+        { q: "What is this? (Imagine a device for telling time)", options: ["Clock", "Watch", "Compass"] },
+        { q: "What is this? (Imagine a long-necked animal)", options: ["Giraffe", "Ostrich", "Llama"] }
     ];
 
     let state = {
-        section: 0,
-        subStep: 0,
-        score: 0,
-        words: [],
+        section: 0, subStep: 0, words: [], currentPhrase: {},
         sections: ['Attention', 'Immediate Memory', 'Fluency', 'Visuospatial', 'Language', 'Delayed Memory'],
         scores: [0,0,0,0,0,0]
     };
 
+    function speak(text) {
+        window.speechSynthesis.cancel();
+        const msg = new SpeechSynthesisUtterance(text);
+        msg.rate = 0.85; 
+        window.speechSynthesis.speak(msg);
+    }
+
     function initTest() {
         state.words = memoryPools[Math.floor(Math.random() * memoryPools.length)];
+        state.currentPhrase = phrasePool[Math.floor(Math.random() * phrasePool.length)];
         switchScreen('testArea');
         render();
     }
@@ -125,40 +132,52 @@
         switch(state.section) {
             case 0: // Attention
                 let nums = Array.from({length: state.subStep + 3}, () => Math.floor(Math.random() * 9) + 1);
-                html += `<div class='instruction'>Remember these numbers:</div><h2 style='text-align:center; letter-spacing:10px;'>${nums.join('')}</h2>`;
+                html += `<div class='instruction'>Listen and remember:</div><div class='speech-indicator'>🔊 Speaking...</div>`;
+                speak(nums.join(' '));
                 setTimeout(() => {
-                    content.innerHTML = `<h3>Attention</h3><p>Which sequence was it?</p>` + 
+                    content.innerHTML = `<h3>Attention</h3><p>Which sequence did you hear?</p>` + 
                         shuffle([{t: nums.join(', '), c:true}, {t: nums.reverse().join(', '), c:false}])
                         .map(b => `<button class="choice-btn" onclick="handleInput(${b.c})">${b.t}</button>`).join('');
-                }, 2500);
+                }, 3000);
                 break;
 
             case 1: // Immediate Memory
-                html += `<div class='instruction'>Memorize these 3 words:</div><h2 style='text-align:center;'>${state.words.join(' - ')}</h2>`;
+                html += `<div class='instruction'>Listen to these 3 words:</div><div class='speech-indicator'>🔊 Speaking...</div>`;
+                speak(state.words.join(', '));
                 nextBtn.style.display = "block";
-                nextBtn.innerText = "I have memorized them";
+                nextBtn.innerText = "I heard them";
                 break;
 
             case 2: // Fluency
-                html += `<div class='instruction'>Type as many words as you can starting with 'F'.</div><div class="timer" id="t">60</div><textarea id="fluency" style="width:100%;height:100px;"></textarea>`;
+                html += `<div class='instruction'>Type as many words as you can starting with 'P'.</div><div class="timer" id="t">60</div><textarea id="fluency" style="width:100%;height:100px;"></textarea>`;
                 nextBtn.style.display = "block";
                 startTimer();
                 break;
 
             case 3: // Visuospatial
-                html += `<div class='instruction'>Draw a clock at 10 past 11.</div><p>Self-rate your drawing:</p>` + 
+                html += `<div class='instruction'>Draw a clock at 11:10 on paper.</div><p>Rate yourself:</p>` + 
                     [6,4,2,0].map(v => `<button class="choice-btn" onclick="handleInput(${v})">${v}/6 Points</button>`).join('');
                 break;
 
-            case 4: // Language
-                let item = languagePools[state.subStep];
-                html += `<p style='margin:15px 0;'>${item.q}</p>` + 
-                    shuffle(item.options.map((o, i) => ({t: o, c: i === 0})))
-                    .map(b => `<button class="choice-btn" onclick="handleInput(${b.c})">${b.t}</button>`).join('');
+            case 4: // Language (Phrase Repetition & Naming)
+                if (state.subStep === 0) {
+                    html += `<div class='instruction'>Listen to the phrase:</div><div class='speech-indicator'>🔊 Speaking...</div>`;
+                    speak(state.currentPhrase.correct);
+                    setTimeout(() => {
+                        let opts = shuffle([{t: state.currentPhrase.correct, c:true}, ...state.currentPhrase.decoys.map(d => ({t: d, c:false}))]);
+                        content.innerHTML = `<h3>Language</h3><p>Select the phrase you heard:</p>` + 
+                            opts.map(b => `<button class="choice-btn" onclick="handleInput(${b.c})">${b.t}</button>`).join('');
+                    }, 2500);
+                } else {
+                    let item = namingPools[state.subStep - 1];
+                    html += `<p style='margin:15px 0;'>${item.q}</p>` + 
+                        shuffle(item.options.map((o, i) => ({t: o, c: i === 0})))
+                        .map(b => `<button class="choice-btn" onclick="handleInput(${b.c})">${b.t}</button>`).join('');
+                }
                 break;
 
             case 5: // Delayed Memory
-                html += `<p>What were the 3 words from earlier?</p>` + 
+                html += `<p>Select the 3 words from the beginning:</p>` + 
                     shuffle([{t: state.words.join(', '), c:true}, {t: "Apple, Pen, Table", c:false}, {t: "Lemon, Key, Penny", c:false}])
                     .map(b => `<button class="choice-btn" onclick="handleInput(${b.c})">${b.t}</button>`).join('');
                 break;
@@ -171,7 +190,6 @@
         else if (state.section === 3) { state.scores[3] = val; state.section++; }
         else if (state.section === 4) { if(val) state.scores[4] += 2; state.subStep++; if(state.subStep > 2) { state.section++; } }
         else if (state.section === 5) { if(val) state.scores[5] = 4; state.section++; }
-        
         if(state.section > 5) finish(); else render();
     }
 
@@ -190,7 +208,7 @@
         let iv = setInterval(() => {
             s--;
             if(document.getElementById('t')) document.getElementById('t').innerText = s;
-            if(s <= 0) { clearInterval(iv); processNext(); }
+            if(s <= 0 || state.section !== 2) { clearInterval(iv); if(s<=0) processNext(); }
         }, 1000);
     }
 
@@ -201,7 +219,7 @@
         let total = state.scores.reduce((a,b) => a+b, 0);
         document.getElementById('total').innerText = total + " / 30";
         document.getElementById('breakdown').innerHTML = state.sections.map((n, i) => 
-            `<div class="score-card"><span>${n}</span><strong>${state.scores[i]}</strong></div>`).join('');
+            `<div style='display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:10px;'><span>${n}</span><strong>${state.scores[i]}</strong></div>`).join('');
     }
 </script>
 
